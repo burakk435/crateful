@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Crateful</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2300e6a8'/%3E%3Cstop offset='100%25' stop-color='%235b8def'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='%230a0e13'/%3E%3Cpath d='M6 21 A11 11 0 0 1 26 21' stroke='url(%23g)' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='11' r='3' fill='url(%23g)'/%3E%3C/svg%3E">
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+<style>
+html,body{margin:0;background:#0a0e13;min-height:100%;}
+:root{
+--ink:#0a0e13; --surface:#121821; --surface-2:#1a222d; --line:#232d3a;
+--mint:#00e6a8; --mint-dim:#0a3d2f; --blue:#5b8def;
+--text:#e7ecf1; --muted:#7d8b9a; --red:#ff6b5c;
+--mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+--sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box;}
+.amk-app{font-family:var(--sans); background:radial-gradient(circle at 20% -10%, #0f2a24 0%, var(--ink) 45%); color:var(--text); min-height:100vh; padding-bottom:40px;}
+.amk-header{border-bottom:1px solid var(--line); padding:16px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:rgba(10,14,19,0.92); backdrop-filter:blur(6px); z-index:10;}
+.amk-brand{display:flex; align-items:center; gap:10px;}
+.amk-mark{width:28px;height:28px;border-radius:8px;background:var(--surface-2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center;}
+.amk-brand-text{font-family:var(--mono); font-size:14px; letter-spacing:0.06em; color:var(--text); text-transform:uppercase; font-weight:600;}
+.amk-brand-sub{font-family:var(--mono); font-size:10.5px; color:var(--muted); margin-left:8px;}
+.amk-connect-btn{border:none; border-radius:10px; padding:10px 18px; font-family:var(--sans); font-size:13.5px; font-weight:600; cursor:pointer; background:var(--mint); color:#04140f;}
+.amk-connect-btn:disabled{opacity:0.6; cursor:not-allowed;}
+.amk-connected-pill{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12.5px; color:var(--text); background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 14px;}
+.amk-dot{width:7px;height:7px;border-radius:50%; background:var(--mint);}
+.amk-shell{max-width:900px; margin:0 auto; padding:28px 20px 0;}
+.amk-hero{padding:6px 4px 26px;}
+.amk-hero-title{font-size:26px; font-weight:700; margin:0 0 8px; letter-spacing:-0.01em;}
+.amk-hero-sub{font-size:14.5px; color:var(--muted); margin:0; max-width:560px; line-height:1.6;}
+.amk-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:16px;}
+.amk-title{font-size:18px; font-weight:650; margin:0 0 4px;}
+.amk-sub{font-size:13px; color:var(--muted); margin:0 0 16px; line-height:1.55;}
+.amk-btn{border:none; border-radius:11px; padding:12px 16px; font-family:var(--sans); font-size:14px; font-weight:600; cursor:pointer;}
+.amk-btn:disabled{opacity:0.5; cursor:not-allowed;}
+.amk-btn-primary{background:var(--mint); color:#04140f;}
+.amk-btn-ghost{background:var(--surface-2); color:var(--text); border:1px solid var(--line);}
+.amk-btn-danger{background:#3d1512; color:var(--red); border:1px solid #5c231d;}
+.amk-btn-block{width:100%;}
+.amk-tabs{display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:0; overflow-x:auto;}
+.amk-tab{background:none; border:none; color:var(--muted); font-family:var(--sans); font-size:13.5px; font-weight:600; padding:10px 14px; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap;}
+.amk-tab.active{color:var(--mint); border-bottom-color:var(--mint);}
+.amk-field{margin-bottom:13px;}
+.amk-label{font-family:var(--mono); font-size:11px; letter-spacing:0.05em; color:var(--muted); text-transform:uppercase; margin-bottom:6px; display:block;}
+.amk-input{width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; color:var(--text); font-family:var(--mono); font-size:13.5px; outline:none;}
+.amk-input:focus{border-color:var(--mint);}
+.amk-dropzone{width:100%; background:var(--surface-2); border:1.5px dashed var(--line); border-radius:10px; padding:20px; text-align:center; cursor:pointer; font-size:13px; color:var(--muted);}
+.amk-dropzone:hover{border-color:var(--mint); color:var(--text);}
+.amk-preview{width:100%; max-width:180px; border-radius:10px; margin-top:10px; display:none; border:1px solid var(--line);}
+.amk-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:14px;}
+.amk-nftcard{background:var(--surface-2); border:1px solid var(--line); border-radius:13px; overflow:hidden; display:flex; flex-direction:column;}
+.amk-nftimg{width:100%; aspect-ratio:1; object-fit:cover; background:#0d131b;}
+.amk-nftbody{padding:11px 12px 13px;}
+.amk-nftname{font-size:13.5px; font-weight:600; margin:0 0 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.amk-nftmeta{font-family:var(--mono); font-size:11px; color:var(--muted); margin:0 0 10px;}
+.amk-price{font-family:var(--mono); font-size:15px; font-weight:600; color:var(--mint); margin-bottom:9px;}
+.amk-status{font-family:var(--mono); font-size:12.5px; border-radius:10px; padding:11px 13px; margin-top:12px; display:none; line-height:1.5; word-break:break-all;}
+.amk-status.show{display:block;}
+.amk-status.ok{background:var(--mint-dim); border:1px solid #145a44; color:var(--mint);}
+.amk-status.err{background:#3d1512; border:1px solid #5c231d; color:var(--red);}
+.amk-status.pending{background:var(--surface-2); border:1px solid var(--line); color:var(--muted);}
+.amk-empty{font-size:13px; color:var(--muted); text-align:center; padding:30px 10px; font-style:italic;}
+.amk-hint{font-size:12px; color:var(--muted); line-height:1.5; margin-top:10px;}
+.amk-badge{display:inline-block; font-family:var(--mono); font-size:10.5px; background:var(--surface); border:1px solid var(--line); color:var(--muted); padding:2px 7px; border-radius:20px; margin-left:6px;}
+.amk-gate{text-align:center; padding:40px 20px;}
+.amk-gate p{color:var(--muted); font-size:13.5px; margin:0 0 16px;}
+.amk-select-card{display:flex; flex-direction:column; align-items:center; gap:6px; background:var(--surface-2); border:1.5px solid var(--line); border-radius:10px; padding:8px; cursor:pointer; width:84px; font-family:var(--sans); font-size:11px; color:var(--muted);}
+.amk-select-card img{width:64px; height:64px; border-radius:7px; object-fit:cover; background:#0d131b;}
+.amk-select-card.selected{border-color:var(--mint); color:var(--text);}
+.amk-select-card span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+#amkSellPicker{display:flex; flex-wrap:wrap; gap:10px;}
+details.amk-advanced{margin-top:20px; border-top:1px solid var(--line); padding-top:16px;}
+details.amk-advanced summary{cursor:pointer; font-family:var(--mono); font-size:11.5px; color:var(--muted); list-style:none;}
+details.amk-advanced summary::-webkit-details-marker{display:none;}
+details.amk-advanced[open] summary{color:var(--text); margin-bottom:14px;}
+.amk-selected-box{display:none; align-items:center; gap:12px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:16px;}
+.amk-selected-box img{width:44px; height:44px; border-radius:8px; object-fit:cover; background:#0d131b;}
+.amk-footer{text-align:center; font-size:11.5px; color:#455160; font-family:var(--mono); margin-top:30px; line-height:1.8; padding:0 20px;}
+.amk-footer a{color:#5b8def;}
+</style>
+<div class="amk-app">
+<div class="amk-header">
+<div class="amk-brand">
+<div class="amk-mark">
+<svg viewBox="0 0 32 32" width="20" height="20">
+<defs>
+<linearGradient id="amkMarkGrad" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#00e6a8"/>
+<stop offset="100%" stop-color="#5b8def"/>
+</linearGradient>
+</defs>
+<path d="M6 21 A11 11 0 0 1 26 21" stroke="url(#amkMarkGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+<circle cx="16" cy="11" r="3" fill="url(#amkMarkGrad)"/>
+</svg>
+</div>
+<span class="amk-brand-text">Crateful</span>
+<span class="amk-brand-sub">Testnet</span>
+</div>
+<div id="amkConnectArea">
+<button class="amk-btn amk-connect-btn" id="amkConnectBtn">Connect wallet</button>
+</div>
+</div>
+<div class="amk-shell">
+<div class="amk-hero">
+<p class="amk-hero-title">A zero-fee NFT marketplace on Arc</p>
+<p class="amk-hero-sub">Browse listings from any collection on Arc Testnet. Connect a wallet to mint, list, buy, or view the NFTs you own.</p>
+</div>
+<div class="amk-tabs">
+<button class="amk-tab active" data-tab="market">Marketplace</button>
+<button class="amk-tab" data-tab="mine">My NFTs</button>
+<button class="amk-tab" data-tab="mint">Mint</button>
+<button class="amk-tab" data-tab="list">Sell</button>
+</div>
+<div id="amkTabMarket">
+<div class="amk-card">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+<p class="amk-title" style="margin:0;">Active listings</p>
+<button class="amk-btn amk-btn-ghost" id="amkRefreshMarket" style="padding:8px 12px; font-size:12.5px;">Refresh</button>
+</div>
+<p class="amk-sub">NFTs listed from any collection on Arc Testnet.</p>
+<div class="amk-grid" id="amkListingsGrid">
+<div class="amk-empty">Loading...</div>
+</div>
+</div>
+</div>
+<div id="amkTabMine" style="display:none;">
+<div class="amk-card">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+<p class="amk-title" style="margin:0;">NFTs you own</p>
+<button class="amk-btn amk-btn-ghost" id="amkRefreshMine" style="padding:8px 12px; font-size:12.5px;">Refresh</button>
+</div>
+<p class="amk-sub">Shows NFTs you own from this collection, plus any collection that has been listed on this marketplace. Not a full index of every NFT on Arc.</p>
+<div id="amkMineGate" class="amk-gate">
+<p>Connect your wallet to see the NFTs you own.</p>
+<button class="amk-btn amk-btn-primary" id="amkConnectFromMine">Connect wallet</button>
+</div>
+<div class="amk-grid" id="amkMineGrid" style="display:none;"></div>
+</div>
+</div>
+<div id="amkTabMint" style="display:none;">
+<div class="amk-card">
+<div id="amkMintGate" class="amk-gate">
+<p>Connect your wallet to mint an NFT.</p>
+<button class="amk-btn amk-btn-primary" id="amkConnectFromMint">Connect wallet</button>
+</div>
+<div id="amkMintContent" style="display:none;">
+<div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--line);">
+<p class="amk-title" id="amkCollName" style="margin:0;">Collection</p>
+<div style="display:flex; gap:8px;">
+<span class="amk-badge" id="amkCollMintedBadge">0 minted</span>
+<span class="amk-badge" id="amkCollOwnerBadge">owner -</span>
+</div>
+</div>
+<div id="amkOwnerMintBox" style="display:none; margin-bottom:22px; padding-bottom:20px; border-bottom:1px solid var(--line);">
+<span class="amk-label">Owner mint (free)</span>
+<div class="amk-field">
+<span class="amk-label">Recipient address</span>
+<input class="amk-input" id="amkOwnerMintTo" placeholder="0x...">
+</div>
+<div class="amk-field">
+<span class="amk-label">NFT name</span>
+<input class="amk-input" id="amkOwnerMintName" placeholder="My first NFT">
+</div>
+<div class="amk-field">
+<span class="amk-label">Image</span>
+<div class="amk-dropzone" id="amkOwnerDropzone">Click to choose an image</div>
+<input type="file" accept="image/*" id="amkOwnerFileInput" style="display:none;">
+<img class="amk-preview" id="amkOwnerPreview">
+</div>
+<button class="amk-btn amk-btn-primary" id="amkOwnerMintBtn">Mint</button>
+</div>
+<div id="amkOwnerConfigBox" style="display:none; margin-bottom:22px; padding-bottom:20px; border-bottom:1px solid var(--line);">
+<span class="amk-label">Public mint settings</span>
+<div class="amk-field">
+<span class="amk-label">Mint price (USDC, 0 = free)</span>
+<input class="amk-input" id="amkMintPriceInput" placeholder="0">
+</div>
+<div class="amk-row" style="display:flex; gap:10px;">
+<button class="amk-btn amk-btn-primary" id="amkEnablePublicBtn" style="flex:1;">Enable public mint</button>
+<button class="amk-btn amk-btn-ghost" id="amkDisablePublicBtn" style="flex:1;">Disable</button>
+</div>
+<button class="amk-btn amk-btn-ghost amk-btn-block" id="amkWithdrawBtn" style="margin-top:10px;">Withdraw collected USDC</button>
+</div>
+<div id="amkPublicMintBox" style="display:none;">
+<span class="amk-label">Public mint <span id="amkPublicPriceTag" class="amk-badge">0 USDC</span></span>
+<p class="amk-sub" style="margin:6px 0 14px;">Anyone can upload an image and mint it here.</p>
+<div class="amk-field">
+<span class="amk-label">NFT name</span>
+<input class="amk-input" id="amkPublicMintName" placeholder="My first NFT">
+</div>
+<div class="amk-field">
+<span class="amk-label">Image</span>
+<div class="amk-dropzone" id="amkPublicDropzone">Click to choose an image</div>
+<input type="file" accept="image/*" id="amkPublicFileInput" style="display:none;">
+<img class="amk-preview" id="amkPublicPreview">
+</div>
+<button class="amk-btn amk-btn-primary amk-btn-block" id="amkPublicMintBtn">Mint</button>
+</div>
+<p class="amk-empty" id="amkMintClosedMsg" style="display:none;">Public mint is currently closed. Only the collection owner can mint.</p>
+<div class="amk-status" id="amkMintStatus"></div>
+</div>
+</div>
+</div>
+<div id="amkTabList" style="display:none;">
+<div class="amk-card">
+<div id="amkListGate" class="amk-gate">
+<p>Connect your wallet to list an NFT for sale.</p>
+<button class="amk-btn amk-btn-primary" id="amkConnectFromList">Connect wallet</button>
+</div>
+<div id="amkListContent" style="display:none;">
+<p class="amk-title">Sell an NFT you own</p>
+<p class="amk-sub">Pick one of your NFTs and set a price.</p>
+<div class="amk-grid" id="amkSellPicker" style="margin-bottom:6px;"></div>
+<p class="amk-empty" id="amkSellPickerEmpty" style="display:none;">You do not own any NFTs yet. Mint one first, or use advanced mode below for another collection.</p>
+<div class="amk-selected-box" id="amkSelectedNftBox">
+<img id="amkSelectedNftImg" alt="">
+<div>
+<p style="margin:0;font-size:13.5px;font-weight:600;" id="amkSelectedNftName">-</p>
+<p style="margin:0;font-size:11px;color:var(--muted);font-family:var(--mono);" id="amkSelectedNftMeta">-</p>
+</div>
+</div>
+<div class="amk-field">
+<span class="amk-label">Price (USDC)</span>
+<input class="amk-input" id="amkListPrice" placeholder="0.00" inputmode="decimal">
+</div>
+<button class="amk-btn amk-btn-primary amk-btn-block" id="amkListBtn">Approve and list</button>
+<p class="amk-hint">This may ask for two confirmations: approving the marketplace, then listing.</p>
+<div class="amk-status" id="amkListStatus"></div>
+<details class="amk-advanced">
+<summary>List an NFT from another collection (advanced)</summary>
+<div class="amk-field">
+<span class="amk-label">NFT contract address</span>
+<input class="amk-input" id="amkListContract" placeholder="0x...">
+</div>
+<div class="amk-field">
+<span class="amk-label">Token ID</span>
+<input class="amk-input" id="amkListTokenId" placeholder="1" inputmode="numeric">
+</div>
+</details>
+</div>
+</div>
+</div>
+<div class="amk-footer">
+Testnet only, no real monetary value.<br>
+<a href="https://faucet.circle.com" target="_blank" rel="noopener">Get test USDC</a> &middot;
+<a href="https://testnet.arcscan.app" target="_blank" rel="noopener">Block explorer</a>
+</div>
+</div>
+</div>
+<script>
+(function(){
+const NFT_CONTRACT_ADDRESS = "0x352097792D71D01d31D0cd5265E84e91Eeda7831";
+const MARKETPLACE_ADDRESS = "0x163A0CE621c125Fe64ff2bd042BCBE975368e4Fa";
+const ARC_RPC_URL = "https://rpc.testnet.arc.network";
+const ARC_CHAIN_ID_DEC = 5042002;
+const ARC_CHAIN_ID_HEX = "0x" + ARC_CHAIN_ID_DEC.toString(16);
+const ARC_PARAMS = {
+chainId: ARC_CHAIN_ID_HEX,
+chainName: "Arc Testnet",
+nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+rpcUrls: [ARC_RPC_URL],
+blockExplorerUrls: ["https://testnet.arcscan.app"]
+};
+const ERC721_ABI = [
+"function ownerOf(uint256) view returns (address)",
+"function tokenURI(uint256) view returns (string)",
+"function name() view returns (string)",
+"function approve(address,uint256)",
+"function getApproved(uint256) view returns (address)",
+"function isApprovedForAll(address,address) view returns (bool)"
+];
+const ARC_NFT_ABI = ERC721_ABI.concat([
+"function owner() view returns (address)",
+"function publicMintEnabled() view returns (bool)",
+"function mintPrice() view returns (uint256)",
+"function totalMinted() view returns (uint256)",
+"function ownerMint(address,string) returns (uint256)",
+"function publicMint(string) payable returns (uint256)",
+"function setPublicMintConfig(bool,uint256)",
+"function withdraw()"
+]);
+const MARKETPLACE_ABI = [
+"function list(address,uint256,uint256) returns (uint256)",
+"function cancelListing(uint256)",
+"function buy(uint256) payable",
+"function getActiveListingIds() view returns (uint256[])",
+"function getListing(uint256) view returns (tuple(address seller,address nftContract,uint256 tokenId,uint256 price,bool active))"
+];
+
+function createThrottledProvider(url){
+const p = new ethers.JsonRpcProvider(url, undefined, { batchMaxCount: 1 });
+const originalSend = p.send.bind(p);
+let queue = Promise.resolve();
+const MIN_DELAY_MS = 220;
+p.send = function(method, params){
+const resultPromise = queue.then(async function(){
+async function attempt(retriesLeft){
+try{
+const result = await originalSend(method, params);
+await new Promise(function(r){ setTimeout(r, MIN_DELAY_MS); });
+return result;
+}catch(err){
+const msg = (err && err.message) || '';
+const code = (err && err.code) || (err && err.error && err.error.code);
+const isRateLimited = code === -32005 || /429|rate limit/i.test(msg);
+if(isRateLimited && retriesLeft > 0){
+await new Promise(function(r){ setTimeout(r, 900); });
+return attempt(retriesLeft - 1);
+}
+throw err;
+}
+}
+return attempt(5);
+});
+queue = resultPromise.catch(function(){});
+return resultPromise;
+};
+return p;
+}
+
+const readProvider = createThrottledProvider(ARC_RPC_URL);
+const readNft = new ethers.Contract(NFT_CONTRACT_ADDRESS, ARC_NFT_ABI, readProvider);
+const readMarket = new ethers.Contract(MARKETPLACE_ADDRESS, MARKETPLACE_ABI, readProvider);
+let provider, signer, account, nft, market;
+let connected = false;
+let ownerImageDataUrl = null;
+let publicImageDataUrl = null;
+const el = (id) => document.getElementById(id);
+function ipfsToHttp(uri){
+if(!uri) return '';
+if(uri.startsWith('ipfs://')) return 'https://ipfs.io/ipfs/' + uri.slice(7);
+return uri;
+}
+function setStatus(id, kind, msg){
+const s = el(id);
+s.className = 'amk-status show ' + kind;
+s.textContent = msg;
+}
+function clearStatus(id){
+const s = el(id);
+s.className = 'amk-status';
+s.textContent = '';
+}
+function short(a){ return a ? a.slice(0,6) + '...' + a.slice(-4) : ''; }
+// ---------- Image handling ----------
+function readAndResizeImage(file){
+return new Promise(function(resolve, reject){
+const reader = new FileReader();
+reader.onload = function(e){
+const img = new Image();
+img.onload = function(){
+function render(maxSize, quality){
+let w = img.width, h = img.height;
+if(w > h && w > maxSize){ h = Math.round(h * maxSize / w); w = maxSize; }
+else if(h > maxSize){ w = Math.round(w * maxSize / h); h = maxSize; }
+const canvas = document.createElement('canvas');
+canvas.width = w; canvas.height = h;
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, w, h);
+return canvas.toDataURL('image/jpeg', quality);
+}
+// Images are stored fully on-chain, so keep them small to stay affordable.
+// Try progressively smaller/lower-quality renders until the result is small enough.
+const attempts = [[220,0.55],[170,0.5],[130,0.45],[100,0.4],[72,0.35]];
+const TARGET_CHARS = 24000;
+let result = render(attempts[0][0], attempts[0][1]);
+for(let i = 1; i < attempts.length && result.length > TARGET_CHARS; i++){
+result = render(attempts[i][0], attempts[i][1]);
+}
+resolve(result);
+};
+img.onerror = reject;
+img.src = e.target.result;
+};
+reader.onerror = reject;
+reader.readAsDataURL(file);
+});
+}
+function buildMetadataUri(name, imageDataUrl){
+const json = JSON.stringify({ name: name || 'Untitled', image: imageDataUrl });
+const b64 = btoa(unescape(encodeURIComponent(json)));
+return 'data:application/json;base64,' + b64;
+}
+function wireDropzone(dropzoneId, fileInputId, previewId, onLoaded){
+const zone = el(dropzoneId);
+const input = el(fileInputId);
+const preview = el(previewId);
+zone.addEventListener('click', function(){ input.click(); });
+input.addEventListener('change', async function(){
+const file = input.files[0];
+if(!file) return;
+zone.textContent = 'Processing image...';
+try{
+const dataUrl = await readAndResizeImage(file);
+preview.src = dataUrl;
+preview.style.display = 'block';
+zone.textContent = 'Image selected - click to change';
+onLoaded(dataUrl);
+}catch(e){
+zone.textContent = 'Could not read image, click to try again';
+}
+});
+}
+wireDropzone('amkOwnerDropzone', 'amkOwnerFileInput', 'amkOwnerPreview', function(dataUrl){ ownerImageDataUrl = dataUrl; });
+wireDropzone('amkPublicDropzone', 'amkPublicFileInput', 'amkPublicPreview', function(dataUrl){ publicImageDataUrl = dataUrl; });
+// ---------- Connect ----------
+async function ensureArcNetwork(){
+const cid = await window.ethereum.request({ method: 'eth_chainId' });
+if(cid === ARC_CHAIN_ID_HEX) return true;
+try{
+await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC_CHAIN_ID_HEX }] });
+return true;
+}catch(err){
+if(err.code === 4902){
+try{
+await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [ARC_PARAMS] });
+return true;
+}catch(e2){ return false; }
+}
+return false;
+}
+}
+function renderConnectedPill(){
+el('amkConnectArea').innerHTML =
+'<div class="amk-connected-pill"><span class="amk-dot"></span><span>' + short(account) + '</span></div>';
+}
+function renderDisconnected(){
+connected = false;
+account = null;
+el('amkConnectArea').innerHTML = '<button class="amk-btn amk-connect-btn" id="amkConnectBtn">Connect wallet</button>';
+el('amkConnectBtn').addEventListener('click', connect);
+el('amkMintGate').style.display = 'block';
+el('amkMintContent').style.display = 'none';
+el('amkListGate').style.display = 'block';
+el('amkListContent').style.display = 'none';
+el('amkMineGate').style.display = 'block';
+el('amkMineGrid').style.display = 'none';
+loadMarket();
+}
+async function connect(){
+if(!window.ethereum){ alert('No Web3 wallet found. Please install MetaMask.'); return; }
+try{
+await window.ethereum.request({ method: 'eth_requestAccounts' });
+await ensureArcNetwork();
+provider = new ethers.BrowserProvider(window.ethereum, undefined, { batchMaxCount: 1 });
+signer = await provider.getSigner();
+account = await signer.getAddress();
+nft = new ethers.Contract(NFT_CONTRACT_ADDRESS, ARC_NFT_ABI, signer);
+market = new ethers.Contract(MARKETPLACE_ADDRESS, MARKETPLACE_ABI, signer);
+connected = true;
+renderConnectedPill();
+el('amkMintGate').style.display = 'none';
+el('amkMintContent').style.display = 'block';
+el('amkListGate').style.display = 'none';
+el('amkListContent').style.display = 'block';
+el('amkMineGate').style.display = 'none';
+el('amkMineGrid').style.display = 'grid';
+await loadMintTab();
+await loadMarket();
+await loadMine();
+}catch(e){
+alert('Connection failed: ' + (e.message || e));
+}
+}
+el('amkConnectBtn').addEventListener('click', connect);
+el('amkConnectFromMint').addEventListener('click', connect);
+el('amkConnectFromList').addEventListener('click', connect);
+el('amkConnectFromMine').addEventListener('click', connect);
+if(window.ethereum){
+window.ethereum.on('accountsChanged', function(accounts){
+if(!accounts || accounts.length === 0){
+renderDisconnected();
+} else if(connected){
+connect();
+}
+});
+window.ethereum.on('chainChanged', function(){
+if(connected) location.reload();
+});
+}
+// ---------- Tabs ----------
+document.querySelectorAll('.amk-tab').forEach(function(tab){
+tab.addEventListener('click', function(){
+document.querySelectorAll('.amk-tab').forEach(t => t.classList.remove('active'));
+tab.classList.add('active');
+['Market','Mine','Mint','List'].forEach(function(name){
+el('amkTab' + name).style.display = (tab.dataset.tab === name.toLowerCase()) ? 'block' : 'none';
+});
+});
+});
+// ---------- Mint tab ----------
+async function loadMintTab(){
+if(!connected) return;
+try{
+const name = await nft.name();
+const ownerAddr = await nft.owner();
+const pubEnabled = await nft.publicMintEnabled();
+const price = await nft.mintPrice();
+const minted = await nft.totalMinted();
+el('amkCollName').textContent = name;
+el('amkCollMintedBadge').textContent = minted.toString() + ' minted';
+el('amkCollOwnerBadge').textContent = 'owner ' + short(ownerAddr);
+const isOwner = ownerAddr.toLowerCase() === account.toLowerCase();
+el('amkOwnerMintBox').style.display = isOwner ? 'block' : 'none';
+el('amkOwnerConfigBox').style.display = isOwner ? 'block' : 'none';
+if(isOwner) el('amkOwnerMintTo').value = account;
+el('amkPublicMintBox').style.display = pubEnabled ? 'block' : 'none';
+el('amkMintClosedMsg').style.display = (!pubEnabled && !isOwner) ? 'block' : 'none';
+el('amkPublicPriceTag').textContent = ethers.formatUnits(price, 18) + ' USDC';
+}catch(e){
+el('amkCollName').textContent = 'Collection';
+el('amkCollMintedBadge').textContent = 'unavailable';
+el('amkCollOwnerBadge').textContent = '';
+}
+}
+function friendlyMintError(e){
+const msg = (e.shortMessage || e.message || String(e));
+if(/missing revert data|gas required exceeds|out of gas|CALL_EXCEPTION/i.test(msg)){
+return 'Error: the transaction failed, likely because the image is still too large for on-chain storage. Try a smaller or simpler image.';
+}
+return 'Error: ' + msg;
+}
+el('amkOwnerMintBtn').addEventListener('click', async function(){
+clearStatus('amkMintStatus');
+const to = el('amkOwnerMintTo').value.trim();
+const name = el('amkOwnerMintName').value.trim();
+if(!/^0x[a-fA-F0-9]{40}$/.test(to)){ setStatus('amkMintStatus','err','Enter a valid recipient address.'); return; }
+if(!ownerImageDataUrl){ setStatus('amkMintStatus','err','Please choose an image.'); return; }
+try{
+const uri = buildMetadataUri(name, ownerImageDataUrl);
+setStatus('amkMintStatus','pending','Waiting for confirmation...');
+const tx = await nft.ownerMint(to, uri);
+setStatus('amkMintStatus','pending','Transaction sent, confirming...');
+await tx.wait();
+setStatus('amkMintStatus','ok','Minted! Go to the My NFTs tab to list it for sale.');
+await loadMintTab();
+await loadMine();
+}catch(e){ setStatus('amkMintStatus','err',friendlyMintError(e)); }
+});
+el('amkPublicMintBtn').addEventListener('click', async function(){
+clearStatus('amkMintStatus');
+const name = el('amkPublicMintName').value.trim();
+if(!publicImageDataUrl){ setStatus('amkMintStatus','err','Please choose an image.'); return; }
+try{
+const uri = buildMetadataUri(name, publicImageDataUrl);
+const price = await nft.mintPrice();
+setStatus('amkMintStatus','pending','Waiting for confirmation...');
+const tx = await nft.publicMint(uri, { value: price });
+setStatus('amkMintStatus','pending','Transaction sent, confirming...');
+await tx.wait();
+setStatus('amkMintStatus','ok','Minted! Go to the My NFTs tab to list it for sale.');
+await loadMintTab();
+await loadMine();
+}catch(e){ setStatus('amkMintStatus','err',friendlyMintError(e)); }
+});
+el('amkEnablePublicBtn').addEventListener('click', async function(){
+clearStatus('amkMintStatus');
+try{
+const priceStr = el('amkMintPriceInput').value.trim() || '0';
+const priceWei = ethers.parseUnits(priceStr, 18);
+setStatus('amkMintStatus','pending','Waiting for confirmation...');
+const tx = await nft.setPublicMintConfig(true, priceWei);
+await tx.wait();
+setStatus('amkMintStatus','ok','Public mint enabled.');
+await loadMintTab();
+}catch(e){ setStatus('amkMintStatus','err','Error: ' + (e.shortMessage || e.message || e)); }
+});
+el('amkDisablePublicBtn').addEventListener('click', async function(){
+clearStatus('amkMintStatus');
+try{
+setStatus('amkMintStatus','pending','Waiting for confirmation...');
+const tx = await nft.setPublicMintConfig(false, 0);
+await tx.wait();
+setStatus('amkMintStatus','ok','Public mint disabled.');
+await loadMintTab();
+}catch(e){ setStatus('amkMintStatus','err','Error: ' + (e.shortMessage || e.message || e)); }
+});
+el('amkWithdrawBtn').addEventListener('click', async function(){
+clearStatus('amkMintStatus');
+try{
+setStatus('amkMintStatus','pending','Waiting for confirmation...');
+const tx = await nft.withdraw();
+await tx.wait();
+setStatus('amkMintStatus','ok','Withdrawn.');
+}catch(e){ setStatus('amkMintStatus','err','Error: ' + (e.shortMessage || e.message || e)); }
+});
+// ---------- Metadata ----------
+async function fetchMetadata(nftAddr, tokenId, providerToUse){
+try{
+const c = new ethers.Contract(nftAddr, ERC721_ABI, providerToUse || readProvider);
+const uri = await c.tokenURI(tokenId);
+if(uri.startsWith('data:application/json;base64,')){
+const json = JSON.parse(decodeURIComponent(escape(atob(uri.slice('data:application/json;base64,'.length)))));
+return { name: json.name || ('#' + tokenId), image: json.image || '' };
+}
+const res = await fetch(ipfsToHttp(uri));
+const json = await res.json();
+return { name: json.name || ('#' + tokenId), image: ipfsToHttp(json.image || '') };
+}catch(e){
+return { name: '#' + tokenId, image: '' };
+}
+}
+// ---------- Market tab (works without wallet) ----------
+async function loadMarket(){
+const grid = el('amkListingsGrid');
+grid.innerHTML = '<div class="amk-empty">Loading...</div>';
+try{
+const marketToUse = readMarket;
+const ids = await marketToUse.getActiveListingIds();
+if(ids.length === 0){
+grid.innerHTML = '<div class="amk-empty">No listings yet. Be the first to sell!</div>';
+return;
+}
+const cards = [];
+for(const id of ids){
+const l = await marketToUse.getListing(id);
+const meta = await fetchMetadata(l.nftContract, l.tokenId);
+cards.push({ id, l, meta });
+}
+grid.innerHTML = '';
+cards.forEach(function(c){
+const isMine = connected && c.l.seller.toLowerCase() === account.toLowerCase();
+const card = document.createElement('div');
+card.className = 'amk-nftcard';
+card.innerHTML =
+'<img class="amk-nftimg" src="' + (c.meta.image || '') + '" onerror="this.style.opacity=0" alt="">' +
+'<div class="amk-nftbody">' +
+'<p class="amk-nftname">' + c.meta.name + '</p>' +
+'<p class="amk-nftmeta">' + short(c.l.nftContract) + ' - seller ' + short(c.l.seller) + '</p>' +
+'<p class="amk-price">' + ethers.formatUnits(c.l.price, 18) + ' USDC</p>' +
+(isMine
+? '<button class="amk-btn amk-btn-danger amk-btn-block" data-cancel="' + c.id.toString() + '">Cancel</button>'
+: '<button class="amk-btn amk-btn-primary amk-btn-block" data-buy="' + c.id.toString() + '" data-price="' + c.l.price.toString() + '">Buy</button>') +
+'</div>';
+grid.appendChild(card);
+});
+grid.querySelectorAll('[data-buy]').forEach(function(btn){
+btn.addEventListener('click', async function(){
+if(!connected){ connect(); return; }
+btn.disabled = true; btn.textContent = 'confirming...';
+try{
+const tx = await market.buy(btn.dataset.buy, { value: btn.dataset.price });
+btn.textContent = 'processing...';
+await tx.wait();
+await loadMarket();
+await loadMine();
+}catch(e){
+btn.disabled = false; btn.textContent = 'Buy';
+alert('Error: ' + (e.shortMessage || e.message || e));
+}
+});
+});
+grid.querySelectorAll('[data-cancel]').forEach(function(btn){
+btn.addEventListener('click', async function(){
+btn.disabled = true; btn.textContent = 'confirming...';
+try{
+const tx = await market.cancelListing(btn.dataset.cancel);
+await tx.wait();
+await loadMarket();
+await loadMine();
+}catch(e){
+btn.disabled = false; btn.textContent = 'Cancel';
+alert('Error: ' + (e.shortMessage || e.message || e));
+}
+});
+});
+}catch(e){
+grid.innerHTML = '<div class="amk-empty">Could not read listings.</div>';
+}
+}
+el('amkRefreshMarket').addEventListener('click', loadMarket);
+// ---------- My NFTs tab ----------
+async function getOwnedFromCollection(contractAddr, ownerAddr){
+const owned = [];
+try{
+const c = new ethers.Contract(contractAddr, ARC_NFT_ABI, readProvider);
+const total = await c.totalMinted();
+const totalNum = Number(total);
+for(let id = 1; id <= totalNum; id++){
+try{
+const o = await c.ownerOf(id);
+if(o.toLowerCase() === ownerAddr.toLowerCase()){
+owned.push({ contract: contractAddr, tokenId: id });
+}
+}catch(e){ /* burned or nonexistent */ }
+}
+}catch(e){ /* not our ArcNFT-style contract, skip totalMinted-based scan */ }
+return owned;
+}
+async function getOwnedFromGenericContract(contractAddr, ownerAddr, tokenIds){
+const owned = [];
+const c = new ethers.Contract(contractAddr, ERC721_ABI, readProvider);
+for(const id of tokenIds){
+try{
+const o = await c.ownerOf(id);
+if(o.toLowerCase() === ownerAddr.toLowerCase()){
+owned.push({ contract: contractAddr, tokenId: Number(id) });
+}
+}catch(e){ /* skip */ }
+}
+return owned;
+}
+let lastMineCards = [];
+function selectNftForSale(r, meta){
+el('amkListContract').value = r.contract;
+el('amkListTokenId').value = r.tokenId;
+el('amkSelectedNftBox').style.display = 'flex';
+el('amkSelectedNftImg').src = meta.image || '';
+el('amkSelectedNftName').textContent = meta.name;
+el('amkSelectedNftMeta').textContent = short(r.contract) + ' - token #' + r.tokenId;
+document.querySelectorAll('.amk-select-card').forEach(function(c){
+c.classList.toggle('selected', c.dataset.contract === r.contract && String(c.dataset.tokenId) === String(r.tokenId));
+});
+}
+function switchToTab(tabName){
+document.querySelectorAll('.amk-tab').forEach(t => t.classList.remove('active'));
+document.querySelector('.amk-tab[data-tab="' + tabName + '"]').classList.add('active');
+['Market','Mine','Mint','List'].forEach(function(name){
+el('amkTab' + name).style.display = (name.toLowerCase() === tabName) ? 'block' : 'none';
+});
+}
+function renderSellPicker(cards){
+const picker = el('amkSellPicker');
+const emptyMsg = el('amkSellPickerEmpty');
+picker.innerHTML = '';
+if(cards.length === 0){
+emptyMsg.style.display = 'block';
+return;
+}
+emptyMsg.style.display = 'none';
+cards.forEach(function(c){
+const card = document.createElement('button');
+card.type = 'button';
+card.className = 'amk-select-card';
+card.dataset.contract = c.r.contract;
+card.dataset.tokenId = c.r.tokenId;
+card.innerHTML = '<img src="' + (c.meta.image || '') + '" onerror="this.style.opacity=0" alt="">' +
+'<span>' + c.meta.name + '</span>';
+card.addEventListener('click', function(){ selectNftForSale(c.r, c.meta); });
+picker.appendChild(card);
+});
+}
+async function loadMine(){
+if(!connected) return;
+const grid = el('amkMineGrid');
+grid.innerHTML = '<div class="amk-empty">Loading...</div>';
+try{
+const results = [];
+const seen = new Set();
+const fromMain = await getOwnedFromCollection(NFT_CONTRACT_ADDRESS, account);
+fromMain.forEach(function(o){
+const key = o.contract + '-' + o.tokenId;
+if(!seen.has(key)){ seen.add(key); results.push(o); }
+});
+const ids = await readMarket.getActiveListingIds();
+const contractToTokenIds = {};
+for(const id of ids){
+const l = await readMarket.getListing(id);
+const addr = l.nftContract;
+if(addr.toLowerCase() === NFT_CONTRACT_ADDRESS.toLowerCase()) continue;
+if(!contractToTokenIds[addr]) contractToTokenIds[addr] = [];
+contractToTokenIds[addr].push(l.tokenId);
+}
+for(const addr in contractToTokenIds){
+const owned = await getOwnedFromGenericContract(addr, account, contractToTokenIds[addr]);
+owned.forEach(function(o){
+const key = o.contract + '-' + o.tokenId;
+if(!seen.has(key)){ seen.add(key); results.push(o); }
+});
+}
+if(results.length === 0){
+grid.innerHTML = '<div class="amk-empty">No NFTs found in this collection or in marketplace-listed collections.</div>';
+lastMineCards = [];
+renderSellPicker([]);
+return;
+}
+const cards = [];
+for(const r of results){
+const meta = await fetchMetadata(r.contract, r.tokenId);
+cards.push({ r, meta });
+}
+lastMineCards = cards;
+renderSellPicker(cards);
+grid.innerHTML = '';
+cards.forEach(function(c){
+const card = document.createElement('div');
+card.className = 'amk-nftcard';
+card.innerHTML =
+'<img class="amk-nftimg" src="' + (c.meta.image || '') + '" onerror="this.style.opacity=0" alt="">' +
+'<div class="amk-nftbody">' +
+'<p class="amk-nftname">' + c.meta.name + '</p>' +
+'<button class="amk-btn amk-btn-ghost amk-btn-block" data-sell-contract="' + c.r.contract + '" data-sell-token="' + c.r.tokenId + '">Sell</button>' +
+'</div>';
+grid.appendChild(card);
+});
+grid.querySelectorAll('[data-sell-contract]').forEach(function(btn){
+btn.addEventListener('click', function(){
+const match = lastMineCards.find(function(c){
+return c.r.contract === btn.dataset.sellContract && String(c.r.tokenId) === String(btn.dataset.sellToken);
+});
+if(match) selectNftForSale(match.r, match.meta);
+el('amkListPrice').value = '';
+switchToTab('list');
+el('amkListPrice').focus();
+});
+});
+}catch(e){
+grid.innerHTML = '<div class="amk-empty">Could not load your NFTs.</div>';
+}
+}
+el('amkRefreshMine').addEventListener('click', loadMine);
+// ---------- List tab ----------
+el('amkListContract').value = NFT_CONTRACT_ADDRESS;
+el('amkListBtn').addEventListener('click', async function(){
+clearStatus('amkListStatus');
+const contractAddr = el('amkListContract').value.trim();
+const tokenId = el('amkListTokenId').value.trim();
+const priceStr = el('amkListPrice').value.trim();
+if(!/^0x[a-fA-F0-9]{40}$/.test(contractAddr)){ setStatus('amkListStatus','err','Enter a valid NFT contract address.'); return; }
+if(!tokenId || isNaN(Number(tokenId))){ setStatus('amkListStatus','err','Enter a valid token ID.'); return; }
+if(!priceStr || isNaN(Number(priceStr)) || Number(priceStr) <= 0){ setStatus('amkListStatus','err','Enter a valid price.'); return; }
+try{
+const priceWei = ethers.parseUnits(priceStr, 18);
+const nftC = new ethers.Contract(contractAddr, ERC721_ABI, signer);
+const owner = await nftC.ownerOf(tokenId);
+if(owner.toLowerCase() !== account.toLowerCase()){
+setStatus('amkListStatus','err','You do not own this NFT.'); return;
+}
+const approved = await nftC.getApproved(tokenId);
+const allApproved = await nftC.isApprovedForAll(account, MARKETPLACE_ADDRESS);
+if(approved.toLowerCase() !== MARKETPLACE_ADDRESS.toLowerCase() && !allApproved){
+setStatus('amkListStatus','pending','Requesting marketplace approval...');
+const approveTx = await nftC.approve(MARKETPLACE_ADDRESS, tokenId);
+await approveTx.wait();
+}
+setStatus('amkListStatus','pending','Waiting for listing confirmation...');
+const tx = await market.list(contractAddr, tokenId, priceWei);
+await tx.wait();
+setStatus('amkListStatus','ok','Listed! Check the Marketplace tab.');
+el('amkListTokenId').value = '';
+el('amkListPrice').value = '';
+await loadMarket();
+}catch(e){
+setStatus('amkListStatus','err','Error: ' + (e.shortMessage || e.message || e));
+}
+});
+loadMarket();
+})();
+</script>
+</body>
+</html>
